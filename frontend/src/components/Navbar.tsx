@@ -18,6 +18,8 @@ const Navbar: React.FC = () => {
         <div>
           {user ? (
             <>
+              <Link to="/" className="mr-4 hover:underline">Dashboard</Link>
+              <Link to="/coupons" className="mr-4 hover:underline">Coupons</Link>
               <span className="mr-4">Welcome, {user.name}</span>
               <button onClick={handleLogout} className="bg-red-500 px-3 py-1 rounded">Logout</button>
             </>
