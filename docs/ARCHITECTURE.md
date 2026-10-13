@@ -137,6 +137,8 @@ The backend must ensure that retrieved coupons belong to the authenticated user.
   server-side, generate strictly from that context, return supporting ids.
   Generation endpoints never fall back to invented text — they return 502
   when the model is unavailable.
+* Resilience: generation calls retry transient 5xx (`ServerError`) up to 3x
+  with exponential backoff; other errors fail fast and honestly.
 
 ---
 

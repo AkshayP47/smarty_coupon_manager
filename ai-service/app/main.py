@@ -34,8 +34,45 @@ def _genai_client():
         return None
 
 
+def _generate_with_retry(client: Any, model: str, contents: Any) -> Any:
+    try:
+        from tenacity import (
+            retry,
+            stop_after_attempt,
+            wait_exponential,
+            retry_if_exception_type,
+        )
+        from google.genai.errors import ServerError
+
+        @retry(
+            stop=stop_after_attempt(3),
+            wait=wait_exponential(multiplier=2, min=2, max=10),
+            retry=retry_if_exception_type(ServerError),
+            reraise=True,
+        )
+        def _call() -> Any:
+            return client.models.generate_content(model=model, contents=contents)
+
+        return _call()
+    except ImportError:
+        return client.models.generate_content(model=model, contents=contents)
+
+
 def _is_gemini_configured() -> bool:
     return bool(os.getenv("GEMINI_API_KEY"))
+
+
+def _response_text(resp: Any) -> str:
+    try:
+        candidates = getattr(resp, "candidates", None) or []
+        if candidates:
+            parts = getattr(getattr(candidates[0], "content", None), "parts", None) or []
+            texts = [getattr(p, "text", "") or "" for p in parts]
+            if any(texts):
+                return "".join(texts).strip()
+        return (getattr(resp, "text", "") or "").strip()
+    except Exception:
+        return ""
 
 
 class SearchCoupon(BaseModel):
@@ -170,8 +207,8 @@ def _gemini_rank(query: str, coupons: List[dict], limit: int) -> Optional[List[d
             "Return ONLY a JSON array of coupon ids ordered most-relevant first, "
             f"max {limit} ids. Example: [\"id1\", \"id2\"]."
         )
-        resp = client.models.generate_content(model=model, contents=prompt)
-        text = (getattr(resp, "text", "") or "").strip()
+        resp = _generate_with_retry(client, model, prompt)
+        text = _response_text(resp)
         start, end = text.find("["), text.rfind("]")
         if start == -1 or end == -1:
             return None
@@ -288,8 +325,8 @@ def extract(req: ExtractRequest):
             "(number), validFrom (YYYY-MM-DD), expiryDate (YYYY-MM-DD), "
             "usageLimit (number), termsAndConditions. Omit keys you cannot find."
         )
-        resp = client.models.generate_content(model=GEMINI_MODEL, contents=[prompt, part])
-        text = (getattr(resp, "text", "") or "").strip()
+        resp = _generate_with_retry(client, GEMINI_MODEL, [prompt, part])
+        text = _response_text(resp)
         start, end = text.find("{"), text.rfind("}")
         if start == -1 or end == -1:
             return {"success": False, "message": "could not parse coupon from image"}
@@ -305,6 +342,15 @@ def answer(req: AnswerRequest):
         return {"success": False, "message": "question is required"}
     coupons = [c.model_dump(by_alias=True) for c in req.coupons]
     limit = max(1, min(req.limit or 10, 50))
+    if not coupons:
+        return {
+            "success": True,
+            "data": {
+                "answer": "You have no saved coupons yet, so I can't find any matches.",
+                "coupons": [],
+                "model": GEMINI_MODEL,
+            },
+        }
     client = _genai_client()
     if client is None:
         return {"success": False, "message": "Gemini answering unavailable (missing key or library)"}
@@ -331,8 +377,8 @@ def answer(req: AnswerRequest):
             f"Question: {req.question}\n"
             f"Coupons (JSON): {json.dumps(slim)}"
         )
-        resp = client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
-        text = (getattr(resp, "text", "") or "").strip()
+        resp = _generate_with_retry(client, GEMINI_MODEL, prompt)
+        text = _response_text(resp)
         start, end = text.find("{"), text.rfind("}")
         if start == -1 or end == -1:
             return {"success": False, "message": "could not parse answer"}
