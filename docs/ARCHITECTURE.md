@@ -120,7 +120,7 @@ The backend must ensure that retrieved coupons belong to the authenticated user.
 
 * Provider/SDK: Google Gemini via the `google-genai` Python package
   (the legacy `google-generativeai` package is deprecated).
-* Embedding model: `text-embedding-004` (configurable via `GEMINI_EMBEDDING_MODEL`).
+* Embedding model: `gemini-embedding-001` (configurable via `GEMINI_EMBEDDING_MODEL`).
 * Embedded text per coupon: `title + code + store + category + description + discountType`.
 * Ranking: cosine similarity between the query embedding and each coupon
   embedding, top-N returned. Pure-Python, unit-verified.
@@ -225,7 +225,7 @@ Examples:
 MONGODB_URI=
 JWT_SECRET=
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-3.8-flash
 
 Never hardcode these values.
 
