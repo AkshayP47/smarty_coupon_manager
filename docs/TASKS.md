@@ -32,7 +32,7 @@
 * [x] Authentication middleware
 * [x] User logout
 * [x] Protected routes
-* [ ] Authorization tests
+* [x] Authorization tests
 
 ---
 
