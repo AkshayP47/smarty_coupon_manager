@@ -34,7 +34,19 @@ def _genai_client():
         return None
 
 
+def _gen_config() -> Any:
+    try:
+        from google.genai import types as genai_types
+
+        return genai_types.GenerateContentConfig(
+            http_options=genai_types.HttpOptions(timeout=30000)
+        )
+    except ImportError:
+        return None
+
+
 def _generate_with_retry(client: Any, model: str, contents: Any) -> Any:
+    config = _gen_config()
     try:
         from tenacity import (
             retry,
@@ -43,19 +55,20 @@ def _generate_with_retry(client: Any, model: str, contents: Any) -> Any:
             retry_if_exception_type,
         )
         from google.genai.errors import ServerError
+        import httpx
 
         @retry(
             stop=stop_after_attempt(3),
             wait=wait_exponential(multiplier=2, min=2, max=10),
-            retry=retry_if_exception_type(ServerError),
+            retry=retry_if_exception_type((ServerError, httpx.TimeoutException)),
             reraise=True,
         )
         def _call() -> Any:
-            return client.models.generate_content(model=model, contents=contents)
+            return client.models.generate_content(model=model, contents=contents, config=config)
 
         return _call()
     except ImportError:
-        return client.models.generate_content(model=model, contents=contents)
+        return client.models.generate_content(model=model, contents=contents, config=config)
 
 
 def _is_gemini_configured() -> bool:

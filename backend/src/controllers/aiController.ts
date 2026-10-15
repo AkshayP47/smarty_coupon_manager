@@ -45,7 +45,7 @@ export const extractCoupon = async (req: Request, res: ExpressResponse) => {  tr
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30000);
+      const timer = setTimeout(() => controller.abort(), 120000);
       const aiRes: any = await fetch(`${AI_SERVICE_URL}/extract`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -102,7 +102,7 @@ const runAiSearch = async (
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
+      const timer = setTimeout(() => controller.abort(), 60000);
       const aiRes: any = await fetch(`${AI_SERVICE_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -162,7 +162,7 @@ export const askQuestion = async (req: Request, res: ExpressResponse) => {
 
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 30000);
+      const timer = setTimeout(() => controller.abort(), 120000);
       const aiRes: any = await fetch(`${AI_SERVICE_URL}/answer`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
