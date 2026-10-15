@@ -16,7 +16,7 @@ except ImportError:
 
 app = FastAPI(title="Smart Coupon AI Service")
 
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001").removeprefix("models/")
 
 
@@ -285,6 +285,13 @@ def _sanitize_draft(parsed: Any) -> dict:
     return draft
 
 
+def _friendly_error(fallback: str, exc: Exception) -> str:
+    text = f"{type(exc).__name__}: {exc}"
+    if "429" in text or "RESOURCE_EXHAUSTED" in text or "quota" in text.lower():
+        return "AI quota exhausted — please try again later"
+    return fallback
+
+
 @app.post("/embed")
 def embed(req: EmbedRequest):
     if not req.texts:
@@ -345,8 +352,8 @@ def extract(req: ExtractRequest):
             return {"success": False, "message": "could not parse coupon from image"}
         draft = _sanitize_draft(json.loads(text[start : end + 1]))
         return {"success": True, "data": {"coupon": draft, "model": GEMINI_MODEL}}
-    except Exception:
-        return {"success": False, "message": "extraction failed"}
+    except Exception as exc:
+        return {"success": False, "message": _friendly_error("extraction failed", exc)}
 
 
 @app.post("/answer")
@@ -405,5 +412,5 @@ def answer(req: AnswerRequest):
                 "model": GEMINI_MODEL,
             },
         }
-    except Exception:
-        return {"success": False, "message": "answering failed"}
+    except Exception as exc:
+        return {"success": False, "message": _friendly_error("answering failed", exc)}

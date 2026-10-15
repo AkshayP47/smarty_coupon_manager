@@ -172,7 +172,7 @@ Request:
 }
 
 The backend forwards `{ query, coupons, limit }` to `AI_SERVICE_URL/search`
-(`ai-service`, default model `gemini-3.8-flash`, key via `GEMINI_API_KEY`).
+(`ai-service`, default model `gemini-3.5-flash`, key via `GEMINI_API_KEY`).
 If the AI service is unconfigured or unreachable, the backend falls back
 to deterministic keyword matching and reports `"method": "local-fallback"`
 (`"gemini"` or `"keyword"` otherwise).
@@ -267,7 +267,7 @@ Example response:
 "data": {
 "answer": "PIZZA5 saves you $5, expiring Friday.",
 "coupons": [],
-"model": "gemini-3.8-flash"
+"model": "gemini-3.5-flash"
 }
 }
 

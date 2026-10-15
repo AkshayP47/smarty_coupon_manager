@@ -227,7 +227,7 @@ Examples:
 MONGODB_URI=
 JWT_SECRET=
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-3.8-flash
+GEMINI_MODEL=gemini-3.5-flash
 
 Never hardcode these values.
 
